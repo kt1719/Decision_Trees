@@ -5,61 +5,59 @@ from numpy.core.fromnumeric import sort
 from numpy.lib.arraysetops import unique
 
 # Node dict should contain left, right, leaf boolean, and i guess conditions???
-node = {"value": None,
+node = {
+        "attribute_index": None,
+        "value": None,
         "left" : None,
         "right" : None,
         "is_leaf" : False
 }
 
-        
-def find_split(data):
-    #   take in the dataset with all attributes and columns 
-    #   return a dictionary
-    node = {"value": 0,
+def decision_tree_learning(training_dataset, depth):
+    node = {
+        "attribute_index": None,
+        "value": 0,
         "left" : None,
         "right" : None,
         "is_leaf" : True
     }
-
-    if data.size == 0:
+    flatten_arr = np.ravel(training_dataset) #used to flatten the dataset into a 1d array
+    room_num = flatten_arr[6:-1:7] #used to take each last column of the original matrix (room number)
+    result = np.all(room_num == room_num[0])
+    if result: #if all the samples have the same label
+        node["value"] = flatten_arr[0]
         return node
+    else:
+        node["is_leaf"] = False
+        [node["attribute"], node["value"]] = find_split(training_dataset)
+        [node["left"], l_depth] = decision_tree_learning(training_dataset<=node["value"], depth+1)
+        [node["right"], r_depth] = decision_tree_learning(training_dataset>node["value"], depth+1)
+        return (node, max(l_depth, r_depth))
 
-    entropy = float("inf")
-    node["is_leaf"] = False
 
-    unique_values = np.unique(data, axis=0)
-    sorted_indecies= np.sort(data, axis=0)
-    index_i = 0
-    index_j = 0
-    for (ind_i,i) in enumerate(unique_values):
-        left_data = np.empty([])
-        right_data = np.empty([])
-        temp_split_index = ind_i
-        for (ind_j,j) in unique_values[ind_i]:
-            temp_split_num = ind_j
-            np.insert(right_data, data[sorted_indecies>j, i])
-            np.insert(left_data, data[sorted_indecies<=j, i])
+        
+def find_split(data): #chooses the attribute and the value that results in the highest information gain
+    #   take in the dataset with all attributes and columns 
+    #   return a tuple with the attribute and the number value
+
+    if data.size == 0: #error handling (sanity check)
+        raise Exception("Data in is nothing")
+
+    entropy = float("inf") #entropy is initially max
+    value = 0
+    attribute = 0
+    sorted_data= np.sort(data, axis=0)
+
+    for i in range(0, sorted_data.size()-1):
+        for unique_number in np.unique(sorted_data[i]):
+            left_data = sorted_data[-1][sorted_data <= unique_number]
+            right_data = sorted_data[-1][sorted_data > unique_number]
             remainder_num = remainder_calc(left_data, right_data)
             if (remainder_num < entropy):
                 entropy = remainder_num
-                node["value"] = j
-                index_i = ind_i
-                index_j = ind_j
-    
-    return node
-
-def find_split(data):
-    '''
-       take in the dataset with all attributes and columns 
-       return a dictionary with a structure 
-
-       node = {"attribute": None, "value": None, "left" : None, "right" : None, "is_leaf" : None}
-    1 - First we need to 
-    2 - 
-    3 - 
-
-    '''
-
+                value = unique_number
+                attribute = i
+    return (value, attribute)
 
 
 # Some helper functions that should be defined
@@ -86,5 +84,3 @@ def remainder_calc(s_left, s_right):
     h_right = entropy_calc(s_right)
     w_right = len(s_right)/total_cardinality
     return (w_left*h_left)+(w_right*h_right)
-
-
