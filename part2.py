@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-from numpy.core.fromnumeric import sort
+from numpy.core.fromnumeric import searchsorted, sort
 from numpy.lib.arraysetops import unique
 from matplotlib.collections import LineCollection
 from matplotlib import colors as mcolors
@@ -28,21 +28,30 @@ def decision_tree_learning(training_dataset, depth=0):
     }
     flatten_arr = np.ravel(training_dataset) #used to flatten the dataset into a 1d array
     room_num = flatten_arr[7:-1:8] #used to take each last column of the original matrix (room number)
+    if len(room_num) == 0:
+        return (node, depth)
     result = np.all(room_num == room_num[0])
     if result: #if all the samples have the same label
         node["value"] = flatten_arr[0]
         return (node, depth)
     else:
+        sorted_arr = np.empty([])
         node["depth"] = depth
         node["is_leaf"] = False
         node["attribute"], node["value"] = find_split(training_dataset)
-        sorted_arr = training_dataset[np.argsort(training_dataset[:, node["attribute"]])]
-        row_index = max(np.where(training_dataset == node["value"])[0])
-        # val = node["value"]
-        # attr = node["attribute"]
-        # print(f"Depth is:{depth} the split is: {val} the attribute is: {attr}")
-        node["left"], l_depth = decision_tree_learning(sorted_arr[0:row_index+1], depth+1)
-        node["right"], r_depth = decision_tree_learning(sorted_arr[row_index+1:-1], depth+1)
+
+        if depth == 0:
+            sorted_arr = training_dataset[np.argsort(training_dataset[:, node["attribute"]])]
+        else:
+            sorted_arr = training_dataset
+        
+        # print(sorted_arr.shape)
+        row_index = max(np.where(sorted_arr[:, node["attribute"]] == node["value"])[0])
+        val = node["value"]
+        attr = node["attribute"]
+        print(f"Depth is:{depth} the split is: {val} the attribute is: {attr} split row is: {row_index}")
+        node["left"], r_depth = decision_tree_learning(sorted_arr[row_index+1:-1][0:-1], depth+1)
+        node["right"], l_depth = decision_tree_learning(sorted_arr[0:row_index+1][0:-1], depth+1)
         return (node, max(l_depth, r_depth))
 
 
@@ -58,9 +67,9 @@ def find_split(data): #chooses the attribute and the value that results in the h
     value = 0
     attribute = 0
     sorted_data = np.sort(data, axis=0)
-
+    sorted_data = np.transpose(sorted_data)
     for i in range(0, len(sorted_data)-1):
-        for unique_number in np.unique(data[i]):
+        for unique_number in np.unique(sorted_data[i]):
             left_data = sorted_data[-1][sorted_data[i] <= unique_number]
             right_data = sorted_data[-1][sorted_data[i] > unique_number]
             remainder_num = remainder_calc(left_data, right_data)
@@ -120,16 +129,16 @@ data = np.loadtxt("clean_dataset.txt",)
 tree, max_depth = decision_tree_learning(data)
 
 
-segs = binary_tree_draw(max_depth, 0, 0, 15)
+# segs = binary_tree_draw(max_depth, 0, 0, 15)
 
-colors = [mcolors.to_rgba(c)
-            for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
-line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
+# colors = [mcolors.to_rgba(c)
+#             for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
+# line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
 
 
 
-fig, ax = plt.subplots()
-ax.set_xlim(-1, levels * depth_dist + 1)
-ax.set_ylim(-1.5*width_dist, 1.5*width_dist)
-ax.add_collection(line_segments)
-plt.show()
+# fig, ax = plt.subplots()
+# ax.set_xlim(-1, levels * depth_dist + 1)
+# ax.set_ylim(-1.5*width_dist, 1.5*width_dist)
+# ax.add_collection(line_segments)
+# plt.show()
