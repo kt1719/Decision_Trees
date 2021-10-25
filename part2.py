@@ -40,18 +40,15 @@ def decision_tree_learning(training_dataset, depth=0):
         node["is_leaf"] = False
         node["attribute"], node["value"] = find_split(training_dataset)
 
-        if depth == 0:
-            sorted_arr = training_dataset[np.argsort(training_dataset[:, node["attribute"]])]
-        else:
-            sorted_arr = training_dataset
-        
+        sorted_arr = training_dataset[np.argsort(training_dataset[:, node["attribute"]])]
         # print(sorted_arr.shape)
+        print(sorted_arr.shape)
         row_index = max(np.where(sorted_arr[:, node["attribute"]] == node["value"])[0])
         val = node["value"]
         attr = node["attribute"]
         print(f"Depth is:{depth} the split is: {val} the attribute is: {attr} split row is: {row_index}")
-        node["left"], r_depth = decision_tree_learning(sorted_arr[row_index+1:-1][0:-1], depth+1)
-        node["right"], l_depth = decision_tree_learning(sorted_arr[0:row_index+1][0:-1], depth+1)
+        node["left"], r_depth = decision_tree_learning(sorted_arr[0:row_index+1][0:-1], depth+1)
+        node["right"], l_depth = decision_tree_learning(sorted_arr[row_index+1:-1][0:-1], depth+1)
         return (node, max(l_depth, r_depth))
 
 
@@ -63,7 +60,7 @@ def find_split(data): #chooses the attribute and the value that results in the h
     if data.size == 0: #error handling (sanity check)
         raise Exception("Data in is nothing")
 
-    entropy = float("inf") #entropy is initially max
+    gain = 0 #entropy is initially max
     value = 0
     attribute = 0
     sorted_data = np.sort(data, axis=0)
@@ -72,9 +69,9 @@ def find_split(data): #chooses the attribute and the value that results in the h
         for unique_number in np.unique(sorted_data[i]):
             left_data = sorted_data[-1][sorted_data[i] <= unique_number]
             right_data = sorted_data[-1][sorted_data[i] > unique_number]
-            remainder_num = remainder_calc(left_data, right_data)
-            if (remainder_num < entropy):
-                entropy = remainder_num
+            information_gain = gain_calc(data[:][-1],left_data, right_data)
+            if (information_gain > gain):
+                gain = information_gain
                 value = unique_number
                 attribute = i
     return (attribute, value)
