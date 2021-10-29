@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.random import default_rng
 import matplotlib.pyplot as plt
 import math
 from numpy.core.fromnumeric import searchsorted, sort
@@ -166,3 +167,40 @@ plt.show()
 # print(attr, "attribute")
 # print(val, "value")
 # print(row, "row")
+
+n_folds = 10
+
+def evaluate_tree(data):
+    total_error = 0
+    for (train_indices, test_indices) in k_fold_split(n_folds, data):
+        trained_tree = decision_tree_learning(train_indices)
+        total_error += evaluate(test_indices, trained_tree)    
+    return total_error / n_folds
+
+def evaluate(test_db, trained_tree):
+    # Traverse the trained_tree and validate if
+    # its the same as the last collumn in test_db
+    return 0
+
+# Splits data into K folds
+def k_fold_split(n_folds, data):
+
+    split_indices = np.array_split(data, n_folds)
+
+    folds = []
+    for k in range(n_folds):
+        # pick k as test
+        test_indices = split_indices[k]
+
+        # combine remaining splits as train
+        # this solution is fancy and worked for me
+        # feel free to use a more verbose solution that's more readable
+        train_indices = np.hstack(split_indices[:k] + split_indices[k+1:])
+
+        folds.append([train_indices, test_indices])
+
+    return folds
+
+
+# to test your function (30 instances, 4 fold)
+
