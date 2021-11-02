@@ -140,31 +140,6 @@ def check_leaf(node):
     if node["left"] == None and node["right"] == None:
         return True
     return False
-'''
-width_dist = 10
-depth_dist = 10
-levels = 5 
-
-
-data = np.loadtxt("clean_dataset.txt",)
-tree, max_depth = decision_tree_learning(data)
-
-
-print(max_depth)
-segs = binary_tree_draw(max_depth, 0, 0, 5)
-
-colors = [mcolors.to_rgba(c)
-            for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
-line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
-
-
-
-fig, ax = plt.subplots()
-ax.set_xlim(-1, levels * depth_dist + 1)
-ax.set_ylim(-1.5*width_dist, 1.5*width_dist)
-ax.add_collection(line_segments)
-plt.show()
-'''
 
 n_folds = 10
 
@@ -174,12 +149,6 @@ def evaluate_tree(data):
         trained_tree = decision_tree_learning(train_indices)
         total_error += evaluate(test_indices, trained_tree)    
     return total_error / n_folds
-
-'''
--64	-56	-61	-66	-71	-82	-81	1
--68	-57	-61	-65	-71	-85	-85	1
--63	-60	-60	-67	-76	-85	-84	1
-'''
 
 # Find accuracy for a single decision tree
 def create_confusion_matrix(test_db, trained_tree):
