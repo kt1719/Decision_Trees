@@ -8,30 +8,22 @@ from matplotlib.collections import LineCollection
 from matplotlib import colors as mcolors
 from numpy.lib.index_tricks import s_
 from numpy.random import default_rng 
-
-
-# Node dict should contain left, right, leaf boolean, and i guess conditions???
-node = {
-        "attribute_index": None,
-        "value": None,
-        "left" : None,
-        "right" : None,
-        "is_leaf" : False,
-        "depth" : None
-}
+import copy as copy
 
 def decision_tree_learning(training_dataset, depth=0):
     node = {
-        "attribute_index": 0,
+        "attribute": 0,
         "value": 0,
         "left" : None,
         "right" : None,
         "is_leaf" : True,
-        "depth" : None
+        "depth" : depth
     }
     arr = training_dataset[:,-1]
     result = np.max(arr) == np.min(arr)
     if result: #if all the samples have the same label
+        node["attribute"] = len(arr) #since attribute has no meaning to a leaf this stores the number of cases there is for the room 
+                                           #which will be used for pruning (Getting the most common room)
         node["value"] = arr[0]
         return (node, depth)
     else:
@@ -43,7 +35,6 @@ def decision_tree_learning(training_dataset, depth=0):
         sorted_arr = training_dataset[np.argsort(training_dataset[:, node["attribute"]])]
         val = node["value"]
         attr = node["attribute"]
-        print(f"Depth is:{depth} the split is: {val} the attribute is: {attr} split row is: {row_index} shape is: {sorted_arr.shape} size of left is {sorted_arr[:row_index+1].shape} size of right is {sorted_arr[row_index+1:].shape}")
         node["right"], r_depth = decision_tree_learning(sorted_arr[:row_index+1], depth+1)
         node["left"], l_depth = decision_tree_learning(sorted_arr[row_index+1:], depth+1)
         return (node, max(l_depth, r_depth))
@@ -137,37 +128,12 @@ def binary_tree_draw(tree, x, y, width): #from stackoverflow
         segments += binary_tree_draw(tree["right"], xr, yr, width/2)
     return segments
 
+n_folds = 10
+
 def check_leaf(node):
     if node["left"] == None and node["right"] == None:
         return True
     return False
-'''
-width_dist = 10
-depth_dist = 10
-levels = 5 
-
-
-data = np.loadtxt("clean_dataset.txt",)
-tree, max_depth = decision_tree_learning(data)
-
-
-print(max_depth)
-segs = binary_tree_draw(max_depth, 0, 0, 5)
-
-colors = [mcolors.to_rgba(c)
-            for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
-line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
-
-
-
-fig, ax = plt.subplots()
-ax.set_xlim(-1, levels * depth_dist + 1)
-ax.set_ylim(-1.5*width_dist, 1.5*width_dist)
-ax.add_collection(line_segments)
-plt.show()
-'''
-
-n_folds = 10
 
 def evaluate_tree(data):
     total_error = 0
@@ -176,19 +142,17 @@ def evaluate_tree(data):
         total_error += evaluate(test_indices, trained_tree)    
     return total_error / n_folds
 
-'''
--64	-56	-61	-66	-71	-82	-81	1
--68	-57	-61	-65	-71	-85	-85	1
--63	-60	-60	-67	-76	-85	-84	1
-'''
-
 # Find accuracy for a single decision tree
 def create_confusion_matrix(test_db, trained_tree):
     # Initizalize confusion matrix
     confusion_matrix = np.zeros([4,4], dtype=int)
     
     # Traverse the trained_tree and validate if its the samte as the last column in test_db
+    # for row in test_db:
+    counter = 0
+    
     for row in test_db:
+        counter += 1
         temp = trained_tree
         while not(temp["is_leaf"]):
             attribute = temp["attribute"]
@@ -197,14 +161,9 @@ def create_confusion_matrix(test_db, trained_tree):
                 temp = temp["right"]
             else:
                 temp = temp["left"]
-            print(f"value decision is: {value} attribute is: {attribute}")
         # store actual and predicted label
         gold_label = row[7]
         predicted_label = temp["value"]
-        v = temp["value"]
-        x = row[int(temp["attribute_index"])]
-        if gold_label != predicted_label:
-            print(row)
         # Update confusion matrix
         confusion_matrix[int(predicted_label-1), int(gold_label-1)]+=1
         
@@ -217,9 +176,9 @@ def caculate_accuracy(confusion_matrix):
     total_predictions = np.sum(confusion_matrix)
     return correct_predictions/total_predictions 
 
-def k_fold_split(n_splits, n_instances, random_generator=default_rng()):
-    # generate a random permutation of indices from 0 to n_instances
-    shuffled_indices = random_generator.permutation(n_instances)
+def k_fold_split(n_splits, data, random_generator=default_rng()):
+    # generate a random permutation of data rows
+    shuffled_indices = random_generator.permutation(data)
 
     # split shuffled indices into almost equal sized splits
     splits = np.array_split(shuffled_indices, n_splits)
@@ -267,65 +226,108 @@ def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     plt.tight_layout()
     plt.show()
 
-def pruning(tree, validation_set):
-    left = tree["left"]
-    right = tree["right"]
-    if tree["left"]["is_leaf"] == False:
-        left = pruning(tree["left"], validation_set)
-    if tree["right"]["is_leaf"] == False:
-        right = pruning(tree["right"], validation_set)
+#   return summed confusion matrix across k-folds and its accuracy
+def k_fold_evaluation(data, k_fold=10):
+    folds = k_fold_split(k_fold, data)
+    big_conf = np.zeros((4,4))
+    for (i,test_fold) in enumerate(folds):
+        training_folds_combined = np.concatenate(folds[:i]+folds[i+1:])
+        tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
+        conf_matrix = create_confusion_matrix(test_fold, tree_test)
+        big_conf += conf_matrix
+    return big_conf, caculate_accuracy(big_conf)
+    
+#return accuracy for a single test set
+def evaluate(test_db, trained_tree):
+    conf_matrix = create_confusion_matrix(test_db, trained_tree)
+    return caculate_accuracy(conf_matrix)
+
+def prune(node, validation_set, root_node):
+    left = node["left"]
+    right = node["right"]
+    if node["left"]["is_leaf"] == False:
+        prune(node["left"], validation_set, root_node)
+    if node["right"]["is_leaf"] == False:
+        prune(node["right"], validation_set, root_node)
 
     if left["is_leaf"] == True and right["is_leaf"] == True:
         #evaluate tree beforehand
+        old_node = [int(node["attribute"]), node["value"], node["left"], node["right"], node["is_leaf"], node["depth"]]
+
+
+        old_accuracy = evaluate(validation_set, root_node)
 
         #make a pruned version of the tree by simplifying the nodes
+        length_node_l = node["left"]["attribute"]
+        length_node_r = node["right"]["attribute"] #attribute means how many of the rooms are 
 
+        newnode = []
+        if length_node_l > length_node_r:
+            newnode = [int(node["left"]["attribute"]), node["left"]["value"], node["left"]["left"], node["left"]["right"], node["left"]["is_leaf"], node["left"]["depth"]]
+        elif length_node_r > length_node_l:
+            newnode = [int(node["right"]["attribute"]), node["right"]["value"], node["right"]["left"], node["right"]["right"], node["right"]["is_leaf"], node["right"]["depth"]]
+        
+        if length_node_l != length_node_r:
+            node["attribute"] = newnode[0]
+            node["value"] = newnode[1]
+            node["left"] = newnode[2]
+            node["right"] = newnode[3]
+            node["is_leaf"] = newnode[4]
+            node["depth"] = newnode[5]
         #evaluate tree after
+        new_accuracy = evaluate(validation_set, root_node)
 
-        #return pruned version if evaluation is better
-    return 
+        if new_accuracy < old_accuracy:
+            #change the node back to what it was before
+            node["attribute"] = old_node[0]
+            node["value"] = old_node[1]
+            node["left"] = old_node[2]
+            node["right"] = old_node[3]
+            node["is_leaf"] = old_node[4]
+            node["depth"] = old_node[5]
+            
+    #return pruned version if evaluation is better or the same
+    return None
     
 
-    
+data = np.loadtxt("noisy_dataset.txt",)
 
-# print("WE ARE HERE")
-data = np.loadtxt("clean_dataset.txt")
 folds = k_fold_split(10, data)
-test_fold = folds[0]
-training_folds_combined = np.concatenate(folds[1:])
-tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
-conf_matrix = create_confusion_matrix(test_fold, tree_test)
-print(conf_matrix)
-print(np.sum(conf_matrix))
-print(caculate_accuracy(conf_matrix))
+training_folds = np.concatenate(folds[2:])
+validation_folds = folds[1]
+testing_folds = folds[0]
+tree, max_depth = decision_tree_learning(training_folds)
 
 
-for (i,test_fold) in enumerate(folds):
-    
-    training_folds_combined = np.stack(folds[:i],folds[i+1:])
-    tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
-    conf_matrix = create_confusion_matrix(test_fold, tree_test)
-    print(conf_matrix)
-    print(np.sum(conf_matrix))
-    print(caculate_accuracy(conf_matrix))
-
-
-# folds2 = train_k_fold_split(10, )
+fig2, ax2 = plt.subplots()
+segs2 = binary_tree_draw(tree, 0, 0, 5)
+colors = [mcolors.to_rgba(c)
+            for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
+line_segments = LineCollection(segs2, linewidths=1, colors=colors, linestyle='solid')
 
 
 
-# x = np.array([-70, -50, -50, -50, -60, -60, -60, 2])
-# temp = tree_test
-# while not(temp["is_leaf"]):
-#     t = temp["attribute"]
-#     v = temp["value"]
-#     print(f"attribute is: {t} value is: {v}")
-#     if  x[int(temp["attribute_index"])] < temp["value"] :
-#         temp = temp["left"]
-#     else:
-#         temp = temp["right"]
-#     # store actual and predicted label
-# gold_label = x[7]
-# predicted_label = temp["value"]
-# v = temp["value"]
-# print(f"gold label is {gold_label}, predicted_label is: {predicted_label}")
+ax2.set_xlim(-width_dist, width_dist)
+ax2.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
+ax2.add_collection(line_segments)
+
+print(evaluate(testing_folds, tree))
+
+prune(tree, validation_folds, tree)
+
+print(evaluate(testing_folds,tree))
+
+
+fig, ax = plt.subplots()
+segs = binary_tree_draw(tree, 0, 0, 5)
+
+colors = [mcolors.to_rgba(c)
+            for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
+line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
+
+
+
+ax.set_xlim(-width_dist, width_dist)
+ax.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
+ax.add_collection(line_segments)
+plt.show()
