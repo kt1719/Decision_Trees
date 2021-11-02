@@ -223,6 +223,29 @@ def evaluate(test_db, trained_tree):
     conf_matrix = create_confusion_matrix(test_db, trained_tree)
     return caculate_accuracy(conf_matrix)
 
+#   return recall rate for each class label
+def calculate_recall(confusion_matrix):
+    recall_list = []
+    for i, row in enumerate(confusion_matrix):
+        recall_list.append(row[i]/np.sum(row))
+    return recall_list
+
+#   return percision rate for each class label
+def calculate_percision(confusion_matrix):
+    percision_list = []
+    for i, column in enumerate(confusion_matrix.T):
+        percision_list.append(column[i]/np.sum(column))
+    return percision_list
+
+#   return F1 measure for each class label
+def calculate_f1(confusion_matrix):
+    recall_list = calculate_recall(confusion_matrix)
+    percision_list = calculate_percision(confusion_matrix)
+    f1_measures = []
+    for recall, percision in zip(recall_list,percision_list):
+        f1_measures.append((2*recall*percision)/(recall+percision))
+    return f1_measures
+
 clean_data = np.loadtxt("clean_dataset.txt")
 noisy_data = np.loadtxt("noisy_dataset.txt")
 
@@ -232,6 +255,9 @@ print("Clean Data Statistics: ")
 average_confusion= k_fold_confusion_matrix_calc(clean_data)
 print(average_confusion)
 print(caculate_accuracy(average_confusion))
+print(calculate_recall(average_confusion))
+print(calculate_percision(average_confusion))
+print(calculate_f1(average_confusion))
 
 print()
 
@@ -239,5 +265,8 @@ print("Noisy Data Statistics: ")
 average_confusion = k_fold_confusion_matrix_calc(noisy_data)
 print(average_confusion)
 print(caculate_accuracy(average_confusion))
+print(calculate_recall(average_confusion))
+print(calculate_percision(average_confusion))
+print(calculate_f1(average_confusion))
 
 print()
