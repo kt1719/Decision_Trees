@@ -263,17 +263,25 @@ def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     plt.tight_layout()
     plt.show()
 
-# print("WE ARE HERE")
-data = np.loadtxt("clean_dataset.txt")
-folds = k_fold_split(10, data)
-# test_fold = folds[0]
-# training_folds_combined = np.concatenate(folds[1:])
-# tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
-# conf_matrix = create_confusion_matrix(test_fold, tree_test)
-# print(conf_matrix)
-# print(np.sum(conf_matrix))
-# print(caculate_accuracy(conf_matrix))
+#   return summed confusion matrix across k-folds and its accuracy
+def k_fold_evaluation(data, k_fold=10):
+    folds = k_fold_split(k_fold, data)
+    big_conf = np.zeros((4,4))
+    for (i,test_fold) in enumerate(folds):
+        training_folds_combined = np.concatenate(folds[:i]+folds[i+1:])
+        tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
+        conf_matrix = create_confusion_matrix(test_fold, tree_test)
+        big_conf += conf_matrix
+    return big_conf, caculate_accuracy(big_conf)
+    
+#return accuracy for a single test set
+def evaluate(test_db, trained_tree):
+    conf_matrix = create_confusion_matrix(test_db, trained_tree)
+    return caculate_accuracy(conf_matrix)
 
+data = np.loadtxt("clean_dataset.txt")
+
+'''
 tests_folds = {}
 big_conf = np.zeros((4,4))
 for (i,test_fold) in enumerate(folds):
@@ -289,7 +297,8 @@ print(tests_folds)
 print()
 print(big_conf)
 print(caculate_accuracy(big_conf))
-# folds2 = train_k_fold_split(10, )
+'''
+print(k_fold_evaluation(data))
 
 # x = np.array([-70, -50, -50, -50, -60, -60, -60, 2])
 # temp = tree_test
