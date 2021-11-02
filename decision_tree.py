@@ -12,7 +12,7 @@ from numpy.random import default_rng
 
 # Node dict should contain left, right, leaf boolean, and i guess conditions???
 node = {
-        "attribute_index": None,
+        "attribute": None,
         "value": None,
         "left" : None,
         "right" : None,
@@ -22,7 +22,7 @@ node = {
 
 def decision_tree_learning(training_dataset, depth=0):
     node = {
-        "attribute_index": 0,
+        "attribute": 0,
         "value": 0,
         "left" : None,
         "right" : None,
@@ -43,7 +43,6 @@ def decision_tree_learning(training_dataset, depth=0):
         sorted_arr = training_dataset[np.argsort(training_dataset[:, node["attribute"]])]
         val = node["value"]
         attr = node["attribute"]
-        print(f"Depth is:{depth} the split is: {val} the attribute is: {attr} split row is: {row_index} shape is: {sorted_arr.shape} size of left is {sorted_arr[:row_index+1].shape} size of right is {sorted_arr[row_index+1:].shape}")
         node["right"], r_depth = decision_tree_learning(sorted_arr[:row_index+1], depth+1)
         node["left"], l_depth = decision_tree_learning(sorted_arr[row_index+1:], depth+1)
         return (node, max(l_depth, r_depth))
@@ -197,14 +196,11 @@ def create_confusion_matrix(test_db, trained_tree):
                 temp = temp["right"]
             else:
                 temp = temp["left"]
-            print(f"value decision is: {value} attribute is: {attribute}")
         # store actual and predicted label
         gold_label = row[7]
         predicted_label = temp["value"]
         v = temp["value"]
-        x = row[int(temp["attribute_index"])]
-        if gold_label != predicted_label:
-            print(row)
+        x = row[int(temp["attribute"])]
         # Update confusion matrix
         confusion_matrix[int(predicted_label-1), int(gold_label-1)]+=1
         
@@ -294,21 +290,6 @@ print()
 print(big_conf)
 print(caculate_accuracy(big_conf))
 # folds2 = train_k_fold_split(10, )
-
-tree, max_depth = decision_tree_learning(data)
-fig, ax = plt.subplots()
-segs = binary_tree_draw(tree, 0, 0, 5)
-
-colors = [mcolors.to_rgba(c)
-            for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
-line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
-
-
-
-ax.set_xlim(-width_dist, width_dist)
-ax.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
-ax.add_collection(line_segments)
-plt.show()
 
 # x = np.array([-70, -50, -50, -50, -60, -60, -60, 2])
 # temp = tree_test
