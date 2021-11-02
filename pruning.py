@@ -217,9 +217,9 @@ def caculate_accuracy(confusion_matrix):
     total_predictions = np.sum(confusion_matrix)
     return correct_predictions/total_predictions 
 
-def k_fold_split(n_splits, data, random_generator=default_rng()):
-    # generate a random permutation of data rows
-    shuffled_indices = random_generator.permutation(data)
+def k_fold_split(n_splits, n_instances, random_generator=default_rng()):
+    # generate a random permutation of indices from 0 to n_instances
+    shuffled_indices = random_generator.permutation(n_instances)
 
     # split shuffled indices into almost equal sized splits
     splits = np.array_split(shuffled_indices, n_splits)
@@ -267,48 +267,51 @@ def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     plt.tight_layout()
     plt.show()
 
+def pruning(tree, validation_set):
+    left = tree["left"]
+    right = tree["right"]
+    if tree["left"]["is_leaf"] == False:
+        left = pruning(tree["left"], validation_set)
+    if tree["right"]["is_leaf"] == False:
+        right = pruning(tree["right"], validation_set)
+
+    if left["is_leaf"] == True and right["is_leaf"] == True:
+        #evaluate tree beforehand
+
+        #make a pruned version of the tree by simplifying the nodes
+
+        #evaluate tree after
+
+        #return pruned version if evaluation is better
+    
+
+    
+
 # print("WE ARE HERE")
 data = np.loadtxt("clean_dataset.txt")
 folds = k_fold_split(10, data)
-# test_fold = folds[0]
-# training_folds_combined = np.concatenate(folds[1:])
-# tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
-# conf_matrix = create_confusion_matrix(test_fold, tree_test)
-# print(conf_matrix)
-# print(np.sum(conf_matrix))
-# print(caculate_accuracy(conf_matrix))
+test_fold = folds[0]
+training_folds_combined = np.concatenate(folds[1:])
+tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
+conf_matrix = create_confusion_matrix(test_fold, tree_test)
+print(conf_matrix)
+print(np.sum(conf_matrix))
+print(caculate_accuracy(conf_matrix))
 
-tests_folds = {}
-big_conf = np.zeros((4,4))
+
 for (i,test_fold) in enumerate(folds):
-    training_folds_combined = np.concatenate(folds[:i]+folds[i+1:])
+    
+    training_folds_combined = np.stack(folds[:i],folds[i+1:])
     tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
     conf_matrix = create_confusion_matrix(test_fold, tree_test)
-    tests_folds[i] = (conf_matrix, caculate_accuracy(conf_matrix))
-    big_conf += conf_matrix
-print()
-print()
-print("All folds: ")
-print(tests_folds)
-print()
-print(big_conf)
-print(caculate_accuracy(big_conf))
+    print(conf_matrix)
+    print(np.sum(conf_matrix))
+    print(caculate_accuracy(conf_matrix))
+
+
 # folds2 = train_k_fold_split(10, )
 
-tree, max_depth = decision_tree_learning(data)
-fig, ax = plt.subplots()
-segs = binary_tree_draw(tree, 0, 0, 5)
 
-colors = [mcolors.to_rgba(c)
-            for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
-line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
-
-
-
-ax.set_xlim(-width_dist, width_dist)
-ax.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
-ax.add_collection(line_segments)
-plt.show()
 
 # x = np.array([-70, -50, -50, -50, -60, -60, -60, 2])
 # temp = tree_test
