@@ -7,7 +7,7 @@ from numpy.lib.arraysetops import unique
 from matplotlib.collections import LineCollection
 from matplotlib import colors as mcolors
 from numpy.lib.index_tricks import s_
-from numpy.random import default_rng 
+from numpy.random import default_rng
 
 
 # Node dict should contain left, right, leaf boolean, and i guess conditions???
@@ -48,9 +48,9 @@ def decision_tree_learning(training_dataset, depth=0):
         return (node, max(l_depth, r_depth))
 
 
-        
+
 def find_split(data): #chooses the attribute and the value that results in the highest information gain
-    #   take in the dataset with all attributes and columns 
+    #   take in the dataset with all attributes and columns
     #   return a tuple with the attribute and the number value
 
     if data.size == 0: #error handling (sanity check)
@@ -91,7 +91,7 @@ def find_split(data): #chooses the attribute and the value that results in the h
 # Some helper functions that should be defined
 def entropy_calc(dataset):
     #   takes in 1-d array of room numbers
-    #   returns the entropy value 
+    #   returns the entropy value
     entropy = 0
     x = np.unique(dataset)
     for i in x:
@@ -114,7 +114,7 @@ def remainder_calc(s_left, s_right):
 
 width_dist = 10
 depth_dist = 10
-levels = 5 
+levels = 5
 #stackoverflow.com/questions/59028711/plotting-a-binary-tree-in-matplotlib
 def binary_tree_draw(tree, x, y, width): #from stackoverflow
     attr = tree["attribute"]
@@ -124,8 +124,8 @@ def binary_tree_draw(tree, x, y, width): #from stackoverflow
         plt.annotate(f"Room is: {val}", (x,y), ha="center", size=8, bbox = dict(boxstyle="round", pad=0.3, lw = 0.5, fc = "white", ec="b"))
     else:
         yl = y - depth_dist
-        xl = x - width 
-        xr = x + width 
+        xl = x - width
+        xr = x + width
         yr = y - depth_dist
         segments.append([[x,y], [xl,yl]])
         segments.append([[x,y], [xr,yr]])
@@ -143,7 +143,7 @@ def check_leaf(node):
 '''
 width_dist = 10
 depth_dist = 10
-levels = 5 
+levels = 5
 
 
 data = np.loadtxt("clean_dataset.txt",)
@@ -166,26 +166,11 @@ ax.add_collection(line_segments)
 plt.show()
 '''
 
-n_folds = 10
-
-def evaluate_tree(data):
-    total_error = 0
-    for (train_indices, test_indices) in k_fold_split(n_folds, data):
-        trained_tree = decision_tree_learning(train_indices)
-        total_error += evaluate(test_indices, trained_tree)    
-    return total_error / n_folds
-
-'''
--64	-56	-61	-66	-71	-82	-81	1
--68	-57	-61	-65	-71	-85	-85	1
--63	-60	-60	-67	-76	-85	-84	1
-'''
-
 # Find accuracy for a single decision tree
 def create_confusion_matrix(test_db, trained_tree):
     # Initizalize confusion matrix
     confusion_matrix = np.zeros([4,4], dtype=int)
-    
+
     # Traverse the trained_tree and validate if its the samte as the last column in test_db
     for row in test_db:
         temp = trained_tree
@@ -203,15 +188,15 @@ def create_confusion_matrix(test_db, trained_tree):
         x = row[int(temp["attribute"])]
         # Update confusion matrix
         confusion_matrix[int(predicted_label-1), int(gold_label-1)]+=1
-        
+
     return confusion_matrix
-    
+
 def caculate_accuracy(confusion_matrix):
     #sum diagonals
     correct_predictions = np.trace(confusion_matrix)
     #sum all matrix entries
     total_predictions = np.sum(confusion_matrix)
-    return correct_predictions/total_predictions 
+    return correct_predictions/total_predictions
 
 def k_fold_split(n_splits, data, random_generator=default_rng()):
     # generate a random permutation of data rows
@@ -273,14 +258,41 @@ def k_fold_evaluation(data, k_fold=10):
         conf_matrix = create_confusion_matrix(test_fold, tree_test)
         big_conf += conf_matrix
     return big_conf, caculate_accuracy(big_conf)
-    
+
 #return accuracy for a single test set
 def evaluate(test_db, trained_tree):
     conf_matrix = create_confusion_matrix(test_db, trained_tree)
     return caculate_accuracy(conf_matrix)
 
-data = np.loadtxt("clean_dataset.txt")
+def nested_cross_validation(data, k_fold=10):
+#inout data and number of folds
+#output big average of confusion matrices
+#(1) For one training set -> 9 validation sets which gives 9 prune trees
+#then average these into one confusion Matrix
+#(2) After going through 9 other training sets which each have 9 different validation segments
+#for each model do an averaged confusion matrix and then do a last average of the 10 different models
+    folds = k_fold_split(k_fold, data) # 10 folds with 200 elements in each fold
+    main_cm = np.zeros((4,4))
+    for (i,test_fold) in enumerate(folds):
+        outer_test_cm = np.zeros((4,4))
+        remaining_folds = np.concatenate(folds[:i]+folds[i+1:])
+       # validation_folds = k_fold_split(k_fold, test_fold) #10 validation folds with
+        sum_norm_cm = np.zeros((4,4))
+        for (j, validation_fold) in enumerate(remaining_folds):
+            training_folds = np.concatenate(remaining_folds[:j]+remaining_folds[j+1:])
+            tree, _ = decision_tree_learning(training_folds)
+            #prunning of the tree using validation
+            #compare accuracies of the 9 generated trees created, create an average confusion matrix using the test fold, keep track of the best tree
+            conf_matrix = create_confusion_matrix(validation_fold, tree_test)
+            norm_cm = conf_matrix / np.sum(conf_matrix, axis = 1)
+            sum_norm_cm += norm_cm
+            outer_test_cm += (sum_norm_cm / 9) # 1 test set and 9 different validation set big matrice
+        main_cm += outer_test_cm
 
+    big_norm_conf= main_cm / np.sum(main_cm, 1)
+    return big_norm_conf / 10
+
+#
 '''
 tests_folds = {}
 big_conf = np.zeros((4,4))
@@ -298,7 +310,8 @@ print()
 print(big_conf)
 print(caculate_accuracy(big_conf))
 '''
-print(k_fold_evaluation(data))
+data = np.loadtxt("clean_dataset.txt")
+print(nested_cross_validation(data))
 
 # x = np.array([-70, -50, -50, -50, -60, -60, -60, 2])
 # temp = tree_test
