@@ -8,9 +8,7 @@ from matplotlib.collections import LineCollection
 from matplotlib import colors as mcolors
 from numpy.lib.index_tricks import s_
 from numpy.random import default_rng
-
-#github not working
-#github test
+import copy as copy
 
 def decision_tree_learning(training_dataset, depth=0):
     node = {
@@ -19,11 +17,13 @@ def decision_tree_learning(training_dataset, depth=0):
         "left" : None,
         "right" : None,
         "is_leaf" : True,
-        "depth" : None
+        "depth" : depth
     }
     arr = training_dataset[:,-1]
     result = np.max(arr) == np.min(arr)
     if result: #if all the samples have the same label
+        node["attribute"] = len(arr) #since attribute has no meaning to a leaf this stores the number of cases there is for the room
+                                           #which will be used for pruning (Getting the most common room)
         node["value"] = arr[0]
         return (node, depth)
     else:
@@ -128,38 +128,12 @@ def binary_tree_draw(tree, x, y, width): #from stackoverflow
         segments += binary_tree_draw(tree["right"], xr, yr, width/2)
     return segments
 
+n_folds = 10
+
 def check_leaf(node):
     if node["left"] == None and node["right"] == None:
         return True
     return False
-
-
-# width_dist = 10
-# depth_dist = 10
-# levels = 5
-#
-#
-# data = np.loadtxt("clean_dataset.txt",)
-# tree, max_depth = decision_tree_learning(data)
-#
-#
-# print(max_depth)
-# segs = binary_tree_draw(max_depth, 0, 0, 5)
-#
-# colors = [mcolors.to_rgba(c)
-#             for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
-# line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
-#
-#
-#
-# fig, ax = plt.subplots()
-# ax.set_xlim(-1, levels * depth_dist + 1)
-# ax.set_ylim(-1.5*width_dist, 1.5*width_dist)
-# ax.add_collection(line_segments)
-# plt.show()
-
-
-n_folds = 10
 
 def evaluate_tree(data):
     total_error = 0
@@ -174,7 +148,11 @@ def create_confusion_matrix(test_db, trained_tree):
     confusion_matrix = np.zeros([4,4], dtype=int)
 
     # Traverse the trained_tree and validate if its the samte as the last column in test_db
+    # for row in test_db:
+    counter = 0
+
     for row in test_db:
+        counter += 1
         temp = trained_tree
         while not(temp["is_leaf"]):
             attribute = temp["attribute"]
@@ -186,8 +164,6 @@ def create_confusion_matrix(test_db, trained_tree):
         # store actual and predicted label
         gold_label = row[7]
         predicted_label = temp["value"]
-        v = temp["value"]
-        x = row[int(temp["attribute"])]
         # Update confusion matrix
         confusion_matrix[int(predicted_label-1), int(gold_label-1)]+=1
 
@@ -209,6 +185,7 @@ def k_fold_split(n_splits, data, random_generator=default_rng()):
 
     return splits
 
+
 # Splits data into K folds
 def train_k_fold_split(n_folds, data):
     split_indices = np.array_split(data, n_folds)
@@ -221,104 +198,146 @@ def train_k_fold_split(n_folds, data):
         folds.append([train_indices, test_indices])
     return folds
 
-#   function takes in entire dataset, splits it into k folds (10 by default)
-#   take turns using each fold as the dataset and the remaining to train the tree
-#   return the average confusion matrix by:
-#   compute confusion matrix for each training set, normalize it, then sum them all / 10
-def k_fold_confusion_matrix_calc(data, k_fold=10):
+#   return summed confusion matrix across k-folds and its accuracy
+def k_fold_evaluation(data, k_fold=10):
     folds = k_fold_split(k_fold, data)
-    sum_norm_confusion = np.zeros((4,4))
+    big_conf = np.zeros((4,4))
     for (i,test_fold) in enumerate(folds):
         training_folds_combined = np.concatenate(folds[:i]+folds[i+1:])
         tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
-        confusion_matrix = create_confusion_matrix(test_fold, tree_test)
-        norm_confusion = confusion_matrix / np.sum(confusion_matrix, axis = 1)
-        sum_norm_confusion += norm_confusion
-    return sum_norm_confusion/10
+        conf_matrix = create_confusion_matrix(test_fold, tree_test)
+        big_conf += conf_matrix
+    return big_conf, caculate_accuracy(big_conf)
 
-#   return accuracy for a single test set
+#return accuracy for a single test set
 def evaluate(test_db, trained_tree):
     conf_matrix = create_confusion_matrix(test_db, trained_tree)
     return caculate_accuracy(conf_matrix)
 
-#work didnt show up
-'''
-tests_folds = {}
-big_conf = np.zeros((4,4))
-for (i,test_fold) in enumerate(folds):
-    training_folds_combined = np.concatenate(folds[:i]+folds[i+1:])
-    tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
-    conf_matrix = create_confusion_matrix(test_fold, tree_test)
-    tests_folds[i] = (conf_matrix, caculate_accuracy(conf_matrix))
-    big_conf += conf_matrix
-=======
-#   return recall rate for each class label
-def calculate_recall(confusion_matrix):
-    recall_list = []
-    for i, row in enumerate(confusion_matrix):
-        recall_list.append(row[i]/np.sum(row))
-    return recall_list
+def prune(node, validation_set, root_node):
+    left = node["left"]
+    right = node["right"]
+    if node["left"]["is_leaf"] == False:
+        prune(node["left"], validation_set, root_node)
+    if node["right"]["is_leaf"] == False:
+        prune(node["right"], validation_set, root_node)
 
-#   return percision rate for each class label
-def calculate_percision(confusion_matrix):
-    percision_list = []
-    for i, column in enumerate(confusion_matrix.T):
-        percision_list.append(column[i]/np.sum(column))
-    return percision_list
+    if left["is_leaf"] == True and right["is_leaf"] == True:
+        #evaluate tree beforehand
+        old_node = [int(node["attribute"]), node["value"], node["left"], node["right"], node["is_leaf"], node["depth"]]
 
-#   return F1 measure for each class label
-def calculate_f1(confusion_matrix):
-    recall_list = calculate_recall(confusion_matrix)
-    percision_list = calculate_percision(confusion_matrix)
-    f1_measures = []
-    for recall, percision in zip(recall_list,percision_list):
-        f1_measures.append((2*recall*percision)/(recall+percision))
-    return f1_measures
 
-clean_data = np.loadtxt("clean_dataset.txt")
-noisy_data = np.loadtxt("noisy_dataset.txt")
+        old_accuracy = evaluate(validation_set, root_node)
 
->>>>>>> 3ddb5125f69de39ffe3b5788d88c1c439476d189
-print()
+        #make a pruned version of the tree by simplifying the nodes
+        length_node_l = node["left"]["attribute"]
+        length_node_r = node["right"]["attribute"] #attribute means how many of the rooms are
 
-print("Clean Data Statistics: ")
-average_confusion= k_fold_confusion_matrix_calc(clean_data)
-print(average_confusion)
-print(caculate_accuracy(average_confusion))
-print(calculate_recall(average_confusion))
-print(calculate_percision(average_confusion))
-print(calculate_f1(average_confusion))
+        newnode = []
+        if length_node_l > length_node_r:
+            newnode = [int(node["left"]["attribute"]), node["left"]["value"], node["left"]["left"], node["left"]["right"], node["left"]["is_leaf"], node["left"]["depth"]]
+        elif length_node_r > length_node_l:
+            newnode = [int(node["right"]["attribute"]), node["right"]["value"], node["right"]["left"], node["right"]["right"], node["right"]["is_leaf"], node["right"]["depth"]]
 
-print()
+        if length_node_l != length_node_r:
+            node["attribute"] = newnode[0]
+            node["value"] = newnode[1]
+            node["left"] = newnode[2]
+            node["right"] = newnode[3]
+            node["is_leaf"] = newnode[4]
+            node["depth"] = newnode[5]
+        #evaluate tree after
+        new_accuracy = evaluate(validation_set, root_node)
 
-print("Noisy Data Statistics: ")
-average_confusion = k_fold_confusion_matrix_calc(noisy_data)
-print(average_confusion)
-print(caculate_accuracy(average_confusion))
-print(calculate_recall(average_confusion))
-print(calculate_percision(average_confusion))
-print(calculate_f1(average_confusion))
+        if new_accuracy < old_accuracy:
+            #change the node back to what it was before
+            node["attribute"] = old_node[0]
+            node["value"] = old_node[1]
+            node["left"] = old_node[2]
+            node["right"] = old_node[3]
+            node["is_leaf"] = old_node[4]
+            node["depth"] = old_node[5]
 
-print()
-<<<<<<< HEAD
-print(big_conf)
-print(caculate_accuracy(big_conf))
-'''
+    #return pruned version if evaluation is better or the same
+    return None
+
+
+data = np.loadtxt("noisy_dataset.txt",)
+
+folds = k_fold_split(10, data)
+training_folds = np.concatenate(folds[2:])
+validation_folds = folds[1]
+testing_folds = folds[0]
+tree, max_depth = decision_tree_learning(training_folds)
+
+
+fig2, ax2 = plt.subplots()
+segs2 = binary_tree_draw(tree, 0, 0, 5)
+colors = [mcolors.to_rgba(c)
+            for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
+line_segments = LineCollection(segs2, linewidths=1, colors=colors, linestyle='solid')
+
+
+
+ax2.set_xlim(-width_dist, width_dist)
+ax2.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
+ax2.add_collection(line_segments)
+
+# print(evaluate(testing_folds, tree))
+#
+# prune(tree, validation_folds, tree)
+#
+# print(evaluate(testing_folds,tree))
+
+
+# fig, ax = plt.subplots()
+# segs = binary_tree_draw(tree, 0, 0, 5)
+#
+# colors = [mcolors.to_rgba(c)
+#             for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
+# line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
+#
+#
+#
+# ax.set_xlim(-width_dist, width_dist)
+# ax.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
+# ax.add_collection(line_segments)
+# plt.show()
+
+def nested_cross_validation(data, k_fold=10):
+#input data and number of folds
+#output big average of confusion matrices
+#(1) For one training set -> 9 validation sets which gives 9 prune trees
+#then average these into one confusion Matrix
+#(2) After going through 9 other training sets which each have 9 different validation segments
+#for each model do an averaged confusion matrix and then do a last average of the 10 different models
+    folds = k_fold_split(k_fold, data) # 10 folds with 200 elements in each fold
+    big_norm_conf = np.zeros((4,4))
+    cm_per_test_set = np.zeros((4,4))
+    for (i,test_fold) in enumerate(folds):
+        rest = np.concatenate(folds[:i]+folds[i+1:])
+        remaining_folds = np.array_split(rest, k_fold-1)
+       # validation_folds = k_fold_split(k_fold, test_fold) #10 validation folds with
+        sum_norm_cm = np.zeros((4,4))
+        for (j, validation_fold) in enumerate(remaining_folds):
+            training_folds = np.concatenate(remaining_folds[:j]+remaining_folds[j+1:])
+            tree, _ = decision_tree_learning(training_folds)
+            #prunning of the tree using validation
+            prune(tree, validation_fold, tree)
+            #compare accuracies of the 9 generated trees created, create an average confusion matrix using the test fold, keep track of the best tree
+            conf_matrix = create_confusion_matrix(test_fold, tree)
+            norm_cm = conf_matrix / np.sum(conf_matrix, axis = 1)
+            sum_norm_cm += norm_cm # 1 test set and 9 different validation set big matrice
+        cm_per_test_set += (sum_norm_cm/ (k_fold-1))
+        print("sum_norm_cm: ")
+        print(sum_norm_cm / (k_fold-1))
+        print(" ")
+        print("cm_per_test_set : ")
+        print(cm_per_test_set)
+        print(" ")
+        print(" ")
+    print("Final Confusion Matrix Accuracy:")
+    return caculate_accuracy(cm_per_test_set / k_fold)
+
 data = np.loadtxt("clean_dataset.txt")
-print(k_fold_confusion_matrix_calc(data))
-
-# x = np.array([-70, -50, -50, -50, -60, -60, -60, 2])
-# temp = tree_test
-# while not(temp["is_leaf"]):
-#     t = temp["attribute"]
-#     v = temp["value"]
-#     print(f"attribute is: {t} value is: {v}")
-#     if  x[int(temp["attribute_index"])] < temp["value"] :
-#         temp = temp["left"]
-#     else:
-#         temp = temp["right"]
-#     # store actual and predicted label
-# gold_label = x[7]
-# predicted_label = temp["value"]
-# v = temp["value"]
-# print(f"gold label is {gold_label}, predicted_label is: {predicted_label}")
+print(nested_cross_validation(data))
