@@ -9,8 +9,16 @@ from matplotlib import colors as mcolors
 from numpy.lib.index_tricks import s_
 from numpy.random import default_rng
 
-#github not working
-#github test
+
+# Node dict should contain left, right, leaf boolean, and i guess conditions???
+node = {
+        "attribute": None,
+        "value": None,
+        "left" : None,
+        "right" : None,
+        "is_leaf" : False,
+        "depth" : None
+}
 
 def decision_tree_learning(training_dataset, depth=0):
     node = {
@@ -133,32 +141,6 @@ def check_leaf(node):
         return True
     return False
 
-
-# width_dist = 10
-# depth_dist = 10
-# levels = 5
-#
-#
-# data = np.loadtxt("clean_dataset.txt",)
-# tree, max_depth = decision_tree_learning(data)
-#
-#
-# print(max_depth)
-# segs = binary_tree_draw(max_depth, 0, 0, 5)
-#
-# colors = [mcolors.to_rgba(c)
-#             for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
-# line_segments = LineCollection(segs, linewidths=1, colors=colors, linestyle='solid')
-#
-#
-#
-# fig, ax = plt.subplots()
-# ax.set_xlim(-1, levels * depth_dist + 1)
-# ax.set_ylim(-1.5*width_dist, 1.5*width_dist)
-# ax.add_collection(line_segments)
-# plt.show()
-
-
 n_folds = 10
 
 def evaluate_tree(data):
@@ -193,7 +175,7 @@ def create_confusion_matrix(test_db, trained_tree):
 
     return confusion_matrix
 
-def caculate_accuracy(confusion_matrix):
+def calculate_accuracy(confusion_matrix):
     #sum diagonals
     correct_predictions = np.trace(confusion_matrix)
     #sum all matrix entries
@@ -239,19 +221,8 @@ def k_fold_confusion_matrix_calc(data, k_fold=10):
 #   return accuracy for a single test set
 def evaluate(test_db, trained_tree):
     conf_matrix = create_confusion_matrix(test_db, trained_tree)
-    return caculate_accuracy(conf_matrix)
+    return calculate_accuracy(conf_matrix)
 
-#work didnt show up
-'''
-tests_folds = {}
-big_conf = np.zeros((4,4))
-for (i,test_fold) in enumerate(folds):
-    training_folds_combined = np.concatenate(folds[:i]+folds[i+1:])
-    tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
-    conf_matrix = create_confusion_matrix(test_fold, tree_test)
-    tests_folds[i] = (conf_matrix, caculate_accuracy(conf_matrix))
-    big_conf += conf_matrix
-=======
 #   return recall rate for each class label
 def calculate_recall(confusion_matrix):
     recall_list = []
@@ -262,15 +233,18 @@ def calculate_recall(confusion_matrix):
 #   return percision rate for each class label
 def calculate_percision(confusion_matrix):
     percision_list = []
+    #transpose the matrix to acess column elements
     for i, column in enumerate(confusion_matrix.T):
         percision_list.append(column[i]/np.sum(column))
     return percision_list
 
 #   return F1 measure for each class label
 def calculate_f1(confusion_matrix):
+    #   calculate recall and percision rates for each class label
     recall_list = calculate_recall(confusion_matrix)
     percision_list = calculate_percision(confusion_matrix)
     f1_measures = []
+    #   zip rates for each class label together and calculate f1 measure
     for recall, percision in zip(recall_list,percision_list):
         f1_measures.append((2*recall*percision)/(recall+percision))
     return f1_measures
@@ -278,13 +252,12 @@ def calculate_f1(confusion_matrix):
 clean_data = np.loadtxt("clean_dataset.txt")
 noisy_data = np.loadtxt("noisy_dataset.txt")
 
->>>>>>> 3ddb5125f69de39ffe3b5788d88c1c439476d189
 print()
 
 print("Clean Data Statistics: ")
 average_confusion= k_fold_confusion_matrix_calc(clean_data)
 print(average_confusion)
-print(caculate_accuracy(average_confusion))
+print(calculate_accuracy(average_confusion))
 print(calculate_recall(average_confusion))
 print(calculate_percision(average_confusion))
 print(calculate_f1(average_confusion))
@@ -294,31 +267,9 @@ print()
 print("Noisy Data Statistics: ")
 average_confusion = k_fold_confusion_matrix_calc(noisy_data)
 print(average_confusion)
-print(caculate_accuracy(average_confusion))
+print(calculate_accuracy(average_confusion))
 print(calculate_recall(average_confusion))
 print(calculate_percision(average_confusion))
 print(calculate_f1(average_confusion))
 
 print()
-<<<<<<< HEAD
-print(big_conf)
-print(caculate_accuracy(big_conf))
-'''
-data = np.loadtxt("clean_dataset.txt")
-print(k_fold_confusion_matrix_calc(data))
-
-# x = np.array([-70, -50, -50, -50, -60, -60, -60, 2])
-# temp = tree_test
-# while not(temp["is_leaf"]):
-#     t = temp["attribute"]
-#     v = temp["value"]
-#     print(f"attribute is: {t} value is: {v}")
-#     if  x[int(temp["attribute_index"])] < temp["value"] :
-#         temp = temp["left"]
-#     else:
-#         temp = temp["right"]
-#     # store actual and predicted label
-# gold_label = x[7]
-# predicted_label = temp["value"]
-# v = temp["value"]
-# print(f"gold label is {gold_label}, predicted_label is: {predicted_label}")
