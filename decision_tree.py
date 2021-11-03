@@ -223,25 +223,28 @@ def evaluate(test_db, trained_tree):
     conf_matrix = create_confusion_matrix(test_db, trained_tree)
     return caculate_accuracy(conf_matrix)
 
-#   return recall rate for each class label
-def calculate_recall(confusion_matrix):
-    recall_list = []
-    for i, row in enumerate(confusion_matrix):
-        recall_list.append(row[i]/np.sum(row))
-    return recall_list
-
 #   return percision rate for each class label
 def calculate_percision(confusion_matrix):
     percision_list = []
-    for i, column in enumerate(confusion_matrix.T):
-        percision_list.append(column[i]/np.sum(column))
+    for i, row in enumerate(confusion_matrix):
+        percision_list.append(row[i]/np.sum(row))
     return percision_list
+
+#   return recall rate for each class label
+def calculate_recall(confusion_matrix):
+    recall_list = []
+    #transpose the matrix to acess column elements
+    for i, column in enumerate(confusion_matrix.T):
+        recall_list.append(column[i]/np.sum(column))
+    return recall_list
 
 #   return F1 measure for each class label
 def calculate_f1(confusion_matrix):
+    #   calculate recall and percision rates for each class label
     recall_list = calculate_recall(confusion_matrix)
     percision_list = calculate_percision(confusion_matrix)
     f1_measures = []
+    #   zip rates for each class label together and calculate f1 measure
     for recall, percision in zip(recall_list,percision_list):
         f1_measures.append((2*recall*percision)/(recall+percision))
     return f1_measures
