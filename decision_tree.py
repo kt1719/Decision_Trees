@@ -231,11 +231,6 @@ def k_fold_confusion_matrix_calc(data, k_fold=10):
     for (i,test_fold) in enumerate(folds):
         training_folds_combined = np.concatenate(folds[:i]+folds[i+1:])
         tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
-        conf_matrix = create_confusion_matrix(test_fold, tree_test)
-        big_conf += conf_matrix
-    return big_conf, caculate_accuracy(big_conf)
-
-#return accuracy for a single test set
         confusion_matrix = create_confusion_matrix(test_fold, tree_test)
         norm_confusion = confusion_matrix / np.sum(confusion_matrix, axis = 1)
         sum_norm_confusion += norm_confusion
@@ -245,34 +240,6 @@ def k_fold_confusion_matrix_calc(data, k_fold=10):
 def evaluate(test_db, trained_tree):
     conf_matrix = create_confusion_matrix(test_db, trained_tree)
     return caculate_accuracy(conf_matrix)
-
-def nested_cross_validation(data, k_fold=10):
-#inout data and number of folds
-#output big average of confusion matrices
-#(1) For one training set -> 9 validation sets which gives 9 prune trees
-#then average these into one confusion Matrix
-#(2) After going through 9 other training sets which each have 9 different validation segments
-#for each model do an averaged confusion matrix and then do a last average of the 10 different models
-    folds = k_fold_split(k_fold, data) # 10 folds with 200 elements in each fold
-    main_cm = np.zeros((4,4))
-    for (i,test_fold) in enumerate(folds):
-        outer_test_cm = np.zeros((4,4))
-        remaining_folds = np.concatenate(folds[:i]+folds[i+1:])
-       # validation_folds = k_fold_split(k_fold, test_fold) #10 validation folds with
-        sum_norm_cm = np.zeros((4,4))
-        for (j, validation_fold) in enumerate(remaining_folds):
-            training_folds = np.concatenate(remaining_folds[:j]+remaining_folds[j+1:])
-            tree, _ = decision_tree_learning(training_folds)
-            #prunning of the tree using validation
-            #compare accuracies of the 9 generated trees created, create an average confusion matrix using the test fold, keep track of the best tree
-            conf_matrix = create_confusion_matrix(validation_fold, tree_test)
-            norm_cm = conf_matrix / np.sum(conf_matrix, axis = 1)
-            sum_norm_cm += norm_cm
-            outer_test_cm += (sum_norm_cm / 9) # 1 test set and 9 different validation set big matrice
-        main_cm += outer_test_cm
-
-    big_norm_conf= main_cm / np.sum(main_cm, 1)
-    return big_norm_conf / 10
 
 #work didnt show up
 '''
@@ -338,7 +305,7 @@ print(big_conf)
 print(caculate_accuracy(big_conf))
 '''
 data = np.loadtxt("clean_dataset.txt")
-print(nested_cross_validation(data))
+print(k_fold_confusion_matrix_calc(data))
 
 # x = np.array([-70, -50, -50, -50, -60, -60, -60, 2])
 # temp = tree_test
