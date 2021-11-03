@@ -140,6 +140,7 @@ def check_leaf(node):
     if node["left"] == None and node["right"] == None:
         return True
     return False
+    
 '''
 width_dist = 10
 depth_dist = 10
@@ -165,6 +166,15 @@ ax.set_ylim(-1.5*width_dist, 1.5*width_dist)
 ax.add_collection(line_segments)
 plt.show()
 '''
+
+n_folds = 10
+
+def evaluate_tree(data):
+    total_error = 0
+    for (train_indices, test_indices) in k_fold_split(n_folds, data):
+        trained_tree = decision_tree_learning(train_indices)
+        total_error += evaluate(test_indices, trained_tree)
+    return total_error / n_folds
 
 # Find accuracy for a single decision tree
 def create_confusion_matrix(test_db, trained_tree):
@@ -207,7 +217,6 @@ def k_fold_split(n_splits, data, random_generator=default_rng()):
 
     return splits
 
-
 # Splits data into K folds
 def train_k_fold_split(n_folds, data):
     split_indices = np.array_split(data, n_folds)
@@ -220,38 +229,13 @@ def train_k_fold_split(n_folds, data):
         folds.append([train_indices, test_indices])
     return folds
 
-
-# to test your function (30 instances, 4 fold)
-
-
-def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
-    '''
-    Plot the confusion matrix
-    '''
-    print(title)
-    print(cm)
-    #classes = np.unique(actual).astype(int)
-    classes = [1,2,3,4]
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
-    fmt = '2'
-    thresh = cm.max() / 2.
-
-    for i, j in ((i,j) for i in range(cm.shape[0]) for j in range(cm.shape[1])):
-        plt.text(j, i, format(cm[i, j], fmt),horizontalalignment="center", color="white" if cm[i, j] > thresh else "black")
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.tight_layout()
-    plt.show()
-
-#   return summed confusion matrix across k-folds and its accuracy
-def k_fold_evaluation(data, k_fold=10):
+#   function takes in entire dataset, splits it into k folds (10 by default)
+#   take turns using each fold as the dataset and the remaining to train the tree
+#   return the average confusion matrix by:
+#   compute confusion matrix for each training set, normalize it, then sum them all / 10
+def k_fold_confusion_matrix_calc(data, k_fold=10):
     folds = k_fold_split(k_fold, data)
-    big_conf = np.zeros((4,4))
+    sum_norm_confusion = np.zeros((4,4))
     for (i,test_fold) in enumerate(folds):
         training_folds_combined = np.concatenate(folds[:i]+folds[i+1:])
         tree_test, max_depth_test = decision_tree_learning(training_folds_combined)
@@ -260,6 +244,12 @@ def k_fold_evaluation(data, k_fold=10):
     return big_conf, caculate_accuracy(big_conf)
 
 #return accuracy for a single test set
+        confusion_matrix = create_confusion_matrix(test_fold, tree_test)
+        norm_confusion = confusion_matrix / np.sum(confusion_matrix, axis = 1)
+        sum_norm_confusion += norm_confusion
+    return sum_norm_confusion/10
+
+#   return accuracy for a single test set
 def evaluate(test_db, trained_tree):
     conf_matrix = create_confusion_matrix(test_db, trained_tree)
     return caculate_accuracy(conf_matrix)
@@ -302,11 +292,56 @@ for (i,test_fold) in enumerate(folds):
     conf_matrix = create_confusion_matrix(test_fold, tree_test)
     tests_folds[i] = (conf_matrix, caculate_accuracy(conf_matrix))
     big_conf += conf_matrix
+=======
+#   return recall rate for each class label
+def calculate_recall(confusion_matrix):
+    recall_list = []
+    for i, row in enumerate(confusion_matrix):
+        recall_list.append(row[i]/np.sum(row))
+    return recall_list
+
+#   return percision rate for each class label
+def calculate_percision(confusion_matrix):
+    percision_list = []
+    for i, column in enumerate(confusion_matrix.T):
+        percision_list.append(column[i]/np.sum(column))
+    return percision_list
+
+#   return F1 measure for each class label
+def calculate_f1(confusion_matrix):
+    recall_list = calculate_recall(confusion_matrix)
+    percision_list = calculate_percision(confusion_matrix)
+    f1_measures = []
+    for recall, percision in zip(recall_list,percision_list):
+        f1_measures.append((2*recall*percision)/(recall+percision))
+    return f1_measures
+
+clean_data = np.loadtxt("clean_dataset.txt")
+noisy_data = np.loadtxt("noisy_dataset.txt")
+
+>>>>>>> 3ddb5125f69de39ffe3b5788d88c1c439476d189
 print()
+
+print("Clean Data Statistics: ")
+average_confusion= k_fold_confusion_matrix_calc(clean_data)
+print(average_confusion)
+print(caculate_accuracy(average_confusion))
+print(calculate_recall(average_confusion))
+print(calculate_percision(average_confusion))
+print(calculate_f1(average_confusion))
+
 print()
-print("All folds: ")
-print(tests_folds)
+
+print("Noisy Data Statistics: ")
+average_confusion = k_fold_confusion_matrix_calc(noisy_data)
+print(average_confusion)
+print(caculate_accuracy(average_confusion))
+print(calculate_recall(average_confusion))
+print(calculate_percision(average_confusion))
+print(calculate_f1(average_confusion))
+
 print()
+<<<<<<< HEAD
 print(big_conf)
 print(caculate_accuracy(big_conf))
 '''
