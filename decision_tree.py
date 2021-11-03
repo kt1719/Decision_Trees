@@ -140,7 +140,7 @@ def check_leaf(node):
     if node["left"] == None and node["right"] == None:
         return True
     return False
-    
+
 '''
 width_dist = 10
 depth_dist = 10
@@ -282,7 +282,7 @@ def nested_cross_validation(data, k_fold=10):
     big_norm_conf= main_cm / np.sum(main_cm, 1)
     return big_norm_conf / 10
 
-#
+#work didnt show up
 '''
 tests_folds = {}
 big_conf = np.zeros((4,4))
