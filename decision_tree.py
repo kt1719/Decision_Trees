@@ -175,7 +175,7 @@ def create_confusion_matrix(test_db, trained_tree):
         
     return confusion_matrix
     
-def caculate_accuracy(confusion_matrix):
+def calculate_accuracy(confusion_matrix):
     #sum diagonals
     correct_predictions = np.trace(confusion_matrix)
     #sum all matrix entries
@@ -221,22 +221,22 @@ def k_fold_confusion_matrix_calc(data, k_fold=10):
 #   return accuracy for a single test set
 def evaluate(test_db, trained_tree):
     conf_matrix = create_confusion_matrix(test_db, trained_tree)
-    return caculate_accuracy(conf_matrix)
-
-#   return percision rate for each class label
-def calculate_percision(confusion_matrix):
-    percision_list = []
-    for i, row in enumerate(confusion_matrix):
-        percision_list.append(row[i]/np.sum(row))
-    return percision_list
+    return calculate_accuracy(conf_matrix)
 
 #   return recall rate for each class label
 def calculate_recall(confusion_matrix):
     recall_list = []
+    for i, row in enumerate(confusion_matrix):
+        recall_list.append(row[i]/np.sum(row))
+    return recall_list
+
+#   return percision rate for each class label
+def calculate_percision(confusion_matrix):
+    percision_list = []
     #transpose the matrix to acess column elements
     for i, column in enumerate(confusion_matrix.T):
-        recall_list.append(column[i]/np.sum(column))
-    return recall_list
+        percision_list.append(column[i]/np.sum(column))
+    return percision_list
 
 #   return F1 measure for each class label
 def calculate_f1(confusion_matrix):
@@ -257,7 +257,7 @@ print()
 print("Clean Data Statistics: ")
 average_confusion= k_fold_confusion_matrix_calc(clean_data)
 print(average_confusion)
-print(caculate_accuracy(average_confusion))
+print(calculate_accuracy(average_confusion))
 print(calculate_recall(average_confusion))
 print(calculate_percision(average_confusion))
 print(calculate_f1(average_confusion))
@@ -267,7 +267,7 @@ print()
 print("Noisy Data Statistics: ")
 average_confusion = k_fold_confusion_matrix_calc(noisy_data)
 print(average_confusion)
-print(caculate_accuracy(average_confusion))
+print(calculate_accuracy(average_confusion))
 print(calculate_recall(average_confusion))
 print(calculate_percision(average_confusion))
 print(calculate_f1(average_confusion))
