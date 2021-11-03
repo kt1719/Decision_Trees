@@ -9,17 +9,6 @@ from matplotlib import colors as mcolors
 from numpy.lib.index_tricks import s_
 from numpy.random import default_rng
 
-
-# Node dict should contain left, right, leaf boolean, and i guess conditions???
-node = {
-        "attribute": None,
-        "value": None,
-        "left" : None,
-        "right" : None,
-        "is_leaf" : False,
-        "depth" : None
-}
-
 def decision_tree_learning(training_dataset, depth=0):
     node = {
         "attribute": 0,
