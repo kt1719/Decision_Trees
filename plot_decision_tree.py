@@ -32,7 +32,7 @@ def binary_tree_draw(tree, x, y, width):
         segments += binary_tree_draw(tree["right"], xr, yr, width/2)
     return segments
 
-def plot_tree(tree, max_depth):
+def plot_tree(tree, max_depth, title):
     fig2, ax2 = plt.subplots()
     segs2 = binary_tree_draw(tree, 0, 0, 5)
     colors = [mcolors.to_rgba(c)
@@ -42,6 +42,7 @@ def plot_tree(tree, max_depth):
     ax2.set_xlim(-width_dist, width_dist)
     ax2.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
     ax2.add_collection(line_segments)
+    plt.title(title)
     plt.show()
 
 # This function is primarily for showing the plots for before and after pruning for testing and visualisation purposes
@@ -63,12 +64,13 @@ def prune_test(data):
     ax2.set_xlim(-width_dist, width_dist)
     ax2.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
     ax2.add_collection(line_segments)
+    ax2.set_title("Clean Tree")
 
-    print("Old accuracy: " + str(evaluate(testing_folds, tree)) + " Old number of Leaves: " + str(countleaves(tree)))
+    print("Old number of Leaves: " + str(countleaves(tree)) + " Old max depth: " + str(maxdepth(tree)))
 
     prune(tree, validation_folds, tree)
 
-    print("New accuracy: " + str(evaluate(testing_folds,tree))+ " New number of Leaves: " + str(countleaves(tree)))
+    print("New number of Leaves: " + str(countleaves(tree)) + " New max depth: " + str(maxdepth(tree)))
 
     fig, ax = plt.subplots()
     segs = binary_tree_draw(tree, 0, 0, 5)
@@ -80,6 +82,7 @@ def prune_test(data):
     ax.set_xlim(-width_dist, width_dist)
     ax.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
     ax.add_collection(line_segments)
+    ax.set_title("Noisy Tree")
     plt.show()
 
 def countleaves(node):
@@ -96,13 +99,13 @@ def countleaves(node):
     return left_n + right_n
 
 def maxdepth(node):
-    max_depth = 0
+    left_max_depth = right_max_depth = 0
     if node["left"]["is_leaf"] == False:
         left_max_depth = maxdepth(node["left"])
     if node["right"]["is_leaf"] == False:
         right_max_depth = maxdepth(node["right"])
     if node["left"]["is_leaf"] == True:
-        left_n = node["left"]["depth"]
+        left_max_depth = node["left"]["depth"]
     if node["right"]["is_leaf"] == True:
-        right_n = node["right"]["depth"]
-    return left_n + right_n
+        right_max_depth = node["right"]["depth"]
+    return max(left_max_depth, right_max_depth)
