@@ -80,3 +80,19 @@ def nested_cross_validation(data, k_fold=10):
         # print(" ")
     #print("Final Confusion Matrix Accuracy:")
     return cm_per_test_set
+
+def pruning_and_evaluation(data):
+    print("-Performance Metrics after pruning-" )
+    pruned_confusion_matrix = nested_cross_validation(data)
+    print("Confusion matrix:" )
+    print(pruned_confusion_matrix)
+    print("Accuracy: " + str(calculate_accuracy(pruned_confusion_matrix)))
+    recall_list = calculate_recall(pruned_confusion_matrix)
+    percision_list = calculate_percision(pruned_confusion_matrix)
+    f1_list = calculate_f1(pruned_confusion_matrix)
+    print("Metrics per class label-")
+    for room, (recall, percision, f1) in enumerate(zip(recall_list, percision_list, f1_list)):
+        print('Room '+str(room+1)+":")
+        print("    Recall: " + str(recall))
+        print("    Precision: " + str(percision))
+        print("    F1: " + str(f1))

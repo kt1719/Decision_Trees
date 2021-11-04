@@ -1,6 +1,7 @@
 from numpy.random import default_rng
 from decision_tree import *
 
+
 #   function takes in entire dataset, splits it into k folds (10 by default)
 #   take turns using each fold as the dataset and the remaining to train the tree
 #   return the average confusion matrix by:
@@ -83,3 +84,18 @@ def calculate_f1(confusion_matrix):
     for recall, percision in zip(recall_list,percision_list):
         f1_measures.append((2*recall*percision)/(recall+percision))
     return f1_measures
+
+def cross_evaluation(data):
+    average_confusion= k_fold_confusion_matrix_calc(data)
+    print("Confusion matrix:" )
+    print(average_confusion)
+    print("Accuracy: " + str(calculate_accuracy(average_confusion)))
+    recall_list = calculate_recall(average_confusion)
+    percision_list = calculate_percision(average_confusion)
+    f1_list = calculate_f1(average_confusion)
+    print("Metrics per class label-")
+    for room, (recall, percision, f1) in enumerate(zip(recall_list, percision_list, f1_list)):
+        print('Room '+str(room+1)+":")
+        print("    Recall: " + str(recall))
+        print("    Precision: " + str(percision))
+        print("    F1: " + str(f1))
