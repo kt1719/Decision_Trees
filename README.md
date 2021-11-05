@@ -1,10 +1,10 @@
 # Machine Learning Coursework : Decision trees <br />
 
 ## Contributors
-* Ian Ren : [ian.ren19@imperial.ac.uk][github.com/ianzren]
-* Khayle Torres : [khayle.torres19@imperial.ac.uk][github.com/kt1719]
-* Salman Dhaif : [salman.dhaif19@imperial.ac.uk][github.com/sdoif]
-* Yuna Valade : [yuna.valade19@imperial.ac.uk][github.com/yv19]
+* [Ian Ren](github.com/ianzren) : [ian.ren19@imperial.ac.uk]
+* [Khayle Torres](github.com/kt1719) : [khayle.torres19@imperial.ac.uk]
+* [Salman Dhaif](github.com/sdoif) : [salman.dhaif19@imperial.ac.uk]
+* [Yuna Valade](github.com/yv19) : [yuna.valade19@imperial.ac.uk]
 
 ## Instructions
 1. Run "python3 main.py" in terminal to see evaluation metrics for clean and noisy datasets.
