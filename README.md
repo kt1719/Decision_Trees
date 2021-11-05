@@ -9,18 +9,18 @@
 
 
 ## Main Functions
-'''python
+```python
 #Function used to return a tuple of a trained tree and a max depth
 def decision_tree_learning(training_dataset, depth=0):
 
 #Function used to plot the tree
 def plot_tree(tree, max_depth, title):
 
-'''
+```
 
 
 ### Intermediate Functions
-'''python
+```python
 #Function used to the find a split in the dataset that gives the highest information gain
 def find_split(data):
 
@@ -35,4 +35,4 @@ def remainder_calc(s_left, s_right):
 
 #Function used to check if the node is a leaf
 def check_leaf(node):
-'''
+```
