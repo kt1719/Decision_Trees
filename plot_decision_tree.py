@@ -66,11 +66,7 @@ def prune_test(data):
     ax2.add_collection(line_segments)
     ax2.set_title("Pre-Pruned Tree")
 
-    print("Old number of Leaves: " + str(countleaves(tree)) + " Old max depth: " + str(maxdepth(tree)))
-
     prune(tree, validation_folds, tree)
-
-    print("New number of Leaves: " + str(countleaves(tree)) + " New max depth: " + str(maxdepth(tree)))
 
     fig, ax = plt.subplots()
     segs = binary_tree_draw(tree, 0, 0, 5)
