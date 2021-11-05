@@ -39,11 +39,11 @@ def create_confusion_matrix(test_db, trained_tree):
     return confusion_matrix
 
 #   returns an array of k folds
-def k_fold_split(n_splits, data, random_generator=default_rng()):
+def k_fold_split(k_folds, data, random_generator=default_rng()):
     # generate a random permutation of data rows
-    shuffled_indices = random_generator.permutation(data)
-    # split shuffled indices into almost equal sized splits
-    splits = np.array_split(shuffled_indices, n_splits)
+    shuffled_data = random_generator.permutation(data)
+    # split shuffled data into equal sized splits
+    splits = np.array_split(shuffled_data, k_folds)
     return splits
     
 #   return accuracy for a single test set
