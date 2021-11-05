@@ -31,7 +31,6 @@ def prune(node, validation_set, root_node):
             node["left"] = newnode[2]
             node["right"] = newnode[3]
             node["is_leaf"] = newnode[4]
-            node["depth"] = newnode[5]
         #evaluate tree after
         new_accuracy = evaluate(validation_set, root_node)
         if new_accuracy < old_accuracy:

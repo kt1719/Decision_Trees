@@ -12,7 +12,7 @@ width_dist = 10
 depth_dist = 10
 levels = 5 
 
-def binary_tree_draw(tree, x, y, width):
+def binary_tree_draw(tree, x, y, width=5):
     attr = tree["attribute"]
     val = tree["value"]
     segments = []
@@ -34,7 +34,7 @@ def binary_tree_draw(tree, x, y, width):
 
 def plot_tree(tree, max_depth, title):
     fig2, ax2 = plt.subplots()
-    segs2 = binary_tree_draw(tree, 0, 0, 5)
+    segs2 = binary_tree_draw(tree, 0, 0)
     colors = [mcolors.to_rgba(c)
                 for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
     line_segments = LineCollection(segs2, linewidths=1, colors=colors, linestyle='solid')
@@ -55,7 +55,7 @@ def prune_test(data):
     tree, max_depth = decision_tree_learning(training_folds)
 
     fig2, ax2 = plt.subplots()
-    segs2 = binary_tree_draw(tree, 0, 0, 5)
+    segs2 = binary_tree_draw(tree, 0, 0)
     colors = [mcolors.to_rgba(c)
                 for c in plt.rcParams['axes.prop_cycle'].by_key()['color']]
     line_segments = LineCollection(segs2, linewidths=1, colors=colors, linestyle='solid')
@@ -64,7 +64,7 @@ def prune_test(data):
     ax2.set_xlim(-width_dist, width_dist)
     ax2.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
     ax2.add_collection(line_segments)
-    ax2.set_title("Clean Tree")
+    ax2.set_title("Pre-Pruned Tree")
 
     print("Old number of Leaves: " + str(countleaves(tree)) + " Old max depth: " + str(maxdepth(tree)))
 
@@ -82,7 +82,7 @@ def prune_test(data):
     ax.set_xlim(-width_dist, width_dist)
     ax.set_ylim(-(max_depth +1)* depth_dist -5 , 5)
     ax.add_collection(line_segments)
-    ax.set_title("Noisy Tree")
+    ax.set_title("Pruned Tree")
     plt.show()
 
 def countleaves(node):

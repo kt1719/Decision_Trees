@@ -12,7 +12,7 @@ noisy_data = np.loadtxt("wifi_db/noisy_dataset.txt")
 ##Section 2##
 print("Clean Data Decision Tree: ")
 clean_tree, clean_max_depth = decision_tree_learning(clean_data)
-plot_tree(clean_tree, clean_max_depth, "Clean Data Decision Tree")
+plot_tree(clean_tree, clean_max_depth, "Clean Data Decision Tree Trained By Full Dataset")
 
 ##Section 3##
 # Clean dataset cross valid evaluation
@@ -35,7 +35,7 @@ print()
 ##Section 2##
 print("Noisy Data Decision Tree: ")
 noisy_tree, noisy_max_depth = decision_tree_learning(noisy_data)
-plot_tree(noisy_tree, noisy_max_depth, "Noisy Data Decision Tree")
+plot_tree(noisy_tree, noisy_max_depth, "Noisy Data Decision Tree Trained By Full Dataset")
 
 ##Section 3##
 ### Noisy dataset cross valid evaluation ###

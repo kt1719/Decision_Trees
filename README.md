@@ -28,7 +28,7 @@ def find_split(data):
 def entropy_calc(dataset):
 
 #Function used to calculate gain
-def gain_calc(s_all, S_left, s_right):
+def gain_calc(s_all, s_left, s_right):
 
 #Function the calculate the remainder
 def remainder_calc(s_left, s_right):
