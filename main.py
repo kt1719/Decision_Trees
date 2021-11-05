@@ -1,5 +1,6 @@
-from pruning import *
+from pruning import prune
 from plot_decision_tree import prune_test, plot_tree
+from cross_nested_val import *
 
 ###Secton 1###
 clean_data = np.loadtxt("wifi_db/clean_dataset.txt")
@@ -17,15 +18,15 @@ plot_tree(clean_tree, clean_max_depth, "Clean Data Decision Tree Trained By Full
 ##Section 3##
 # Clean dataset cross valid evaluation
 print("Clean Data Statistics: ")
-cross_evaluation(clean_data)
+cross_evaluation(clean_data, 10)
 print()
 
 ##Section 4##
 # COMPARE BEFORE AND AFTER PRUNING (This is for visualization and stat purposes of the tree)
-print("Pruned trees before and after followed by performance metrics for clean_dataset")
+print("Visualisation of tree before and after pruning followed by performance metrics for clean_dataset")
 prune_test(clean_data)
 print()
-pruning_and_evaluation(clean_data)
+pruning_and_evaluation(clean_data, 10)
 print()
 
 ############################################################################################################
@@ -40,15 +41,15 @@ plot_tree(noisy_tree, noisy_max_depth, "Noisy Data Decision Tree Trained By Full
 ##Section 3##
 ### Noisy dataset cross valid evaluation ###
 print("Noisy Data Statistics: ")
-cross_evaluation(noisy_data)
+cross_evaluation(noisy_data, 10)
 print()
 
 ###Section 4###
 # COMPARE BEFORE AND AFTER PRUNING (This is for visualization and stat purposes of the tree)
-print("Pruned trees before and after followed by performance metrics for noisy_dataset")
+print("Visualisation of tree before and after pruning followed by performance metrics for noisy_dataset")
 prune_test(noisy_data)
 print()
-pruning_and_evaluation(noisy_data)
+pruning_and_evaluation(noisy_data, 10)
 print()
 
 ############################################################################################################

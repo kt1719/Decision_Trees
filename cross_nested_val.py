@@ -27,12 +27,20 @@ def nested_cross_validation(data, k_fold=10):
             norm_cm = conf_matrix / np.sum(conf_matrix, axis = 1)
             sum_norm_cm += norm_cm # 1 test set and 9 different validation set big matrice
         cm_per_test_set += (sum_norm_cm/ (k_fold-1))
-        print("sum_norm_cm: ")
-        print(sum_norm_cm / (k_fold-1))
-        print(" ")
-        print("cm_per_test_set : ")
-        print(cm_per_test_set)
-        print(" ")
-        print(" ")
-    print("Final Confusion Matrix Accuracy:")
-    return calculate_accuracy(cm_per_test_set / k_fold)
+    return cm_per_test_set
+
+def pruning_and_evaluation(data, k_fold=10):
+    print("-Performance Metrics after pruning-" )
+    pruned_confusion_matrix = nested_cross_validation(data, k_fold)
+    print("Confusion matrix:" )
+    print(pruned_confusion_matrix)
+    print("Accuracy: " + str(calculate_accuracy(pruned_confusion_matrix)))
+    recall_list = calculate_recall(pruned_confusion_matrix)
+    percision_list = calculate_precision(pruned_confusion_matrix)
+    f1_list = calculate_f1(pruned_confusion_matrix)
+    print("Metrics per class label-")
+    for room, (recall, percision, f1) in enumerate(zip(recall_list, percision_list, f1_list)):
+        print('Room '+str(room+1)+":")
+        print("    Recall: " + str(recall))
+        print("    Precision: " + str(percision))
+        print("    F1: " + str(f1))
