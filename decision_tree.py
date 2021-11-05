@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 def decision_tree_learning(training_dataset, depth=0):
     node = {
@@ -69,7 +68,7 @@ def entropy_calc(dataset):
     x = np.unique(dataset)
     for i in x:
         prob = np.sum(dataset == i) / len(dataset)
-        entropy -= prob * math.log(prob, 2)
+        entropy -= prob * np.log2(prob)
     return entropy
 
 def gain_calc(s_all, s_left, s_right):
